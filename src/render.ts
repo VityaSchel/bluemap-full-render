@@ -1,19 +1,7 @@
-import fs from 'fs';
-import { PNG } from 'pngjs';
-import { createCanvas } from 'canvas';
-import createREGL from 'regl';
-import gl from 'gl';
-
-const loadImage = (path) => {
-  return new Promise((resolve, reject) => {
-    fs.createReadStream(path)
-      .pipe(new PNG())
-      .on('parsed', function () {
-        resolve(this);
-      })
-      .on('error', reject);
-  });
-};
+import { PNG } from 'pngjs'
+import createREGL from 'regl'
+import gl from 'gl'
+import type Stream from 'stream'
 
 const fragmentShader = `
 precision mediump float;
@@ -47,24 +35,21 @@ void main() {
 
   color.rgb += shade;
   gl_FragColor = color;
-}`;
+}`
 
-async function processImage(inputPath, outputPath) {
-  const image = await loadImage(inputPath);
-  const { width, height } = image;
+export async function renderMapTile(input: PNG) {
+  const { width, height } = input
 
-  const canvas = createCanvas(width, height / 2);
   const regl = createREGL({
     gl: gl(width, height / 2, { preserveDrawingBuffer: true }),
-  });
+  })
 
-  // Create texture with proper dimensions
   const texture = regl.texture({
-    data: image.data,
+    data: input.data,
     width: width,
     height: height,
     format: 'rgba',
-  });
+  })
 
   const drawScene = regl({
     frag: fragmentShader,
@@ -78,26 +63,41 @@ async function processImage(inputPath, outputPath) {
       }
     `,
     attributes: {
-      position: [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]],
+      position: [
+        [-1, -1],
+        [1, -1],
+        [1, 1],
+        [-1, -1],
+        [1, 1],
+        [-1, 1],
+      ],
     },
     uniforms: {
       textureImage: texture,
       textureSize: [width, height], // Correct texture dimensions
     },
     count: 6,
-  });
+  })
 
-  regl.clear({ color: [0, 0, 0, 1] });
-  drawScene();
+  regl.clear({ color: [0, 0, 0, 1] })
+  drawScene()
 
-  const pixels = new Uint8Array(width * (height / 2) * 4);
-  regl.read(pixels);
+  const pixels = new Uint8Array(width * (height / 2) * 4)
+  regl.read(pixels)
 
-  const png = new PNG({ width, height: height / 2 });
-  png.data = Buffer.from(pixels);
-  png.pack().pipe(fs.createWriteStream(outputPath));
+  const png = new PNG({ width, height: height / 2 })
+  png.data = Buffer.from(pixels)
+  const result = stream2buffer(png.pack())
 
-  console.log(`Image saved to ${outputPath}`);
+  return result
 }
 
-processImage('input.png', 'output.png');
+async function stream2buffer(stream: Stream): Promise<Buffer> {
+  return new Promise<Buffer>((resolve, reject) => {
+    const _buf = Array<Buffer>()
+
+    stream.on('data', (chunk) => _buf.push(chunk))
+    stream.on('end', () => resolve(Buffer.concat(_buf)))
+    stream.on('error', (err) => reject(`error converting stream - ${err}`))
+  })
+}

@@ -1,15 +1,23 @@
 # bluemap-full-render
 
-To install dependencies:
+Bluemap API:
 
-```bash
-bun install
-```
+https://map.demovio.lol/maps/overworld/tiles/[zoom level]
 
-To run:
+Bluemap can't count to 10. Only 0 to 9 both ends included.
 
-```bash
-bun run index.ts
-```
+/x[actual X tile index from 0 to 9]/z[actual Z tile index from 0 to 9].png
 
-This project was created using `bun init` in bun v1.2.4. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+If we need to go further:
+
+/x[first digit from 0 to 9]/[second digit from 9 to 0]/z[actual Z tile index from 0 to 9].png
+
+Another example:
+
+/x[X tile index 0 to 9]/z[first digit from 0 to 9]/[second digit from 0 to 9].png
+
+Zoom level 0 = json files for rendering in threejs
+Zoom level 1 = 1:1 (1 block = 1 pixel)
+Zoom level 2 = 4:1 (4 blocks = 1 pixel)
+Zoom level 3 = about 20:1 (20 blocks = 1 pixel) (?)
+
