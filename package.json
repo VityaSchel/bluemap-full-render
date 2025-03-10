@@ -1,8 +1,9 @@
 {
   "name": "bluemap-full-render",
-  "module": "index.ts",
+  "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "author": "Viktor Shchelochkov <hi@hloth.dev> (https://hloth.dev)",
   "scripts": {
     "build": "rm -rf dist && tsc -p ./tsconfig.build.json"
   },

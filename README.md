@@ -35,3 +35,10 @@ Zoom level 1 = 1:1 (1 block = 1 pixel)
 Zoom level 2 = 4:1 (4 blocks = 1 pixel)
 Zoom level 3 = about 20:1 (20 blocks = 1 pixel) (?)
 
+## License
+
+[MIT](./LICENSE.md)
+
+## Donate
+
+[hloth.dev/donate](https://hloth.dev/donate)

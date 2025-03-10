@@ -41,12 +41,13 @@ if (filePaths.length === 0) {
   const fileNames = filePaths.map((fn) =>
     fn.substring(inputDirectory.length + 1),
   )
+
   if (fileNames.length === 0) {
-    console.error('No files found')
+    console.error('No input files found')
     process.exit(1)
   }
 
-  console.log('Rendering')
+  console.log('Rendering maps')
   console.time('Rendering')
   let i = 0
   for (const tilePath of fileNames) {
@@ -70,11 +71,9 @@ if (filePaths.length === 0) {
       path.resolve(inputDirectory, '__rendered', tilePath),
       imageData,
     )
+    i++
     console.log(
-      ++i,
-      'of',
-      fileNames.length,
-      'tiles rendered',
+      'Rendering progress:',
       Math.round((i / fileNames.length) * 100) + '%',
     )
   }
@@ -164,7 +163,7 @@ for (let i = 0; i < canvases.length; i++) {
     continue
   }
   const filename = path.resolve(outputDirectory, `output-${i + 1}.png`)
-  console.log('Saving', i / canvases.length, 'map part')
+  console.log('Saving progress:', Math.round((i / canvases.length) * 100) + '%')
 
   const out = fs.createWriteStream(filename)
   const stream = mapCanvas.createPNGStream()
