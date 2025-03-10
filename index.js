@@ -1,57 +1,70 @@
-import fs from 'fs'
-import { PNG } from 'pngjs'
-import { createCanvas } from 'canvas'
-import createREGL from 'regl'
-import gl from 'gl'
+import fs from 'fs';
+import { PNG } from 'pngjs';
+import { createCanvas } from 'canvas';
+import createREGL from 'regl';
+import gl from 'gl';
 
 const loadImage = (path) => {
   return new Promise((resolve, reject) => {
     fs.createReadStream(path)
       .pipe(new PNG())
       .on('parsed', function () {
-        resolve(this)
+        resolve(this);
       })
-      .on('error', reject)
-  })
-}
+      .on('error', reject);
+  });
+};
 
 const fragmentShader = `
 precision mediump float;
 
-uniform sampler2D flatMap;
-uniform sampler2D bumpMap;
+uniform sampler2D textureImage;
 uniform vec2 textureSize;
 varying vec2 vUV;
 
+float metaToHeight(vec4 meta) {
+  float heightUnsigned = meta.g * 65280.0 + meta.b * 255.0;
+  if (heightUnsigned >= 32768.0) {
+    return -(65535.0 - heightUnsigned);
+  } else {
+    return heightUnsigned;  
+  }
+}
+
 void main() {
-  vec4 color = texture2D(flatMap, vUV);
-  float bump = texture2D(bumpMap, vUV).b; // Using blue channel as height
-  float shadow = 1.0 - bump * 0.5; // Simulated ambient occlusion effect
-  gl_FragColor = vec4(color.rgb * shadow, color.a);
-}`
+  vec2 colorUV = vec2(vUV.x, vUV.y * 0.5);
+  vec2 bumpUV = vec2(vUV.x, vUV.y * 0.5 + 0.5);
+  
+  vec4 color = texture2D(textureImage, colorUV);
+  vec4 meta = texture2D(textureImage, bumpUV);
+
+  float height = metaToHeight(meta);
+  float heightX = metaToHeight(texture2D(textureImage, bumpUV + vec2(1.0 / textureSize.x, 0.0)));
+  float heightZ = metaToHeight(texture2D(textureImage, bumpUV + vec2(0.0, 1.0 / textureSize.y)));
+
+  float heightDiff = ((height - heightX) + (height - heightZ)) * 0.06;
+  float shade = clamp(heightDiff, -0.2, 0.04);
+
+  color.rgb += shade;
+  gl_FragColor = color;
+}`;
 
 async function processImage(inputPath, outputPath) {
-  const image = await loadImage(inputPath)
-  const width = image.width
-  const halfHeight = image.height / 2
+  const image = await loadImage(inputPath);
+  const { width, height } = image;
 
-  const flatMapData = new Uint8Array(width * halfHeight * 4)
-  const bumpMapData = new Uint8Array(width * halfHeight * 4)
-
-  for (let y = 0; y < halfHeight; y++) {
-    for (let x = 0; x < width; x++) {
-      const flatIdx = (y * width + x) * 4
-      const bumpIdx = ((y + halfHeight) * width + x) * 4
-
-      flatMapData.set(image.data.subarray(flatIdx, flatIdx + 4), flatIdx)
-      bumpMapData.set(image.data.subarray(bumpIdx, bumpIdx + 4), flatIdx)
-    }
-  }
-
-  const canvas = createCanvas(width, halfHeight)
+  const canvas = createCanvas(width, height / 2);
   const regl = createREGL({
-    gl: gl(width, halfHeight, { preserveDrawingBuffer: true })
-  })
+    gl: gl(width, height / 2, { preserveDrawingBuffer: true }),
+  });
+
+  // Create texture with proper dimensions
+  const texture = regl.texture({
+    data: image.data,
+    width: width,
+    height: height,
+    format: 'rgba',
+  });
 
   const drawScene = regl({
     frag: fragmentShader,
@@ -65,27 +78,26 @@ async function processImage(inputPath, outputPath) {
       }
     `,
     attributes: {
-      position: [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]]
+      position: [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]],
     },
     uniforms: {
-      flatMap: regl.texture({ data: flatMapData, width, height: halfHeight }),
-      bumpMap: regl.texture({ data: bumpMapData, width, height: halfHeight }),
-      textureSize: [width, halfHeight]
+      textureImage: texture,
+      textureSize: [width, height], // Correct texture dimensions
     },
-    count: 6
-  })
+    count: 6,
+  });
 
-  regl.clear({ color: [0, 0, 0, 1] })
-  drawScene()
+  regl.clear({ color: [0, 0, 0, 1] });
+  drawScene();
 
-  const pixels = new Uint8Array(width * halfHeight * 4)
-  regl.read(pixels)
+  const pixels = new Uint8Array(width * (height / 2) * 4);
+  regl.read(pixels);
 
-  const png = new PNG({ width, height: halfHeight })
-  png.data = Buffer.from(pixels)
-  png.pack().pipe(fs.createWriteStream(outputPath))
+  const png = new PNG({ width, height: height / 2 });
+  png.data = Buffer.from(pixels);
+  png.pack().pipe(fs.createWriteStream(outputPath));
 
-  console.log(`Image saved to ${outputPath}`)
+  console.log(`Image saved to ${outputPath}`);
 }
 
-processImage('input.png', 'output.png')
+processImage('input.png', 'output.png');
