@@ -11,6 +11,7 @@
     "@types/bun": "latest",
     "@types/gl": "^6.0.5",
     "@types/pngjs": "^6.0.5",
+    "@types/yargs": "^17.0.33",
     "eslint-plugin-prettier": "^5.2.3",
     "typescript-eslint": "^8.26.0"
   },

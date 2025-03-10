@@ -4,9 +4,31 @@ import path from 'path'
 import fs from 'fs'
 import { renderMapTile } from './render.js'
 import { loadImage } from './utils.js'
+import yargs from 'yargs'
 
-const inputDirectory = path.resolve('./test/bluemap-10.03.2025')
-const outputDirectory = path.resolve('./test/output')
+const args = await yargs(process.argv.slice(2))
+  .command(
+    "$0 <path to bluemap's `1` directory> <path to output directory>",
+    'Render maps',
+  )
+  .epilogue('GitHub: https://github.com/VityaSchel/bluemap-full-render')
+  .parse()
+
+const arg1 = args["pathtobluemap's`1`directory"]
+const arg2 = args['pathtooutputdirectory']
+
+if (!arg1 || typeof arg1 !== 'string' || arg1.length === 0) {
+  console.error('Invalid input directory')
+  process.exit(1)
+}
+
+if (!arg2 || typeof arg2 !== 'string' || arg2.length === 0) {
+  console.error('Invalid input directory')
+  process.exit(1)
+}
+
+const inputDirectory = path.resolve(arg1)
+const outputDirectory = path.resolve(arg2)
 
 let filePaths = await glob(
   path.resolve(inputDirectory, '__rendered', '**/*.png'),
