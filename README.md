@@ -1,5 +1,7 @@
 # bluemap-full-render
 
+Made with [node-canvas](https://github.com/Automattic/node-canvas), [headless-gl](https://github.com/stackgl/headless-gl) and [regl](https://github.com/regl-project/regl) with WebGL shaders [stolen from bluemap repository](https://github.com/BlueMap-Minecraft/BlueMap/blob/master/common/webapp/src/js/map/lowres/LowresVertexShader.js) 
+
 ## Usage
 
 1. Clone repository
@@ -30,10 +32,10 @@ Another example:
 
 `/x[X tile index 0 to 9]/z[first digit from 0 to 9]/[second digit from 0 to 9].png`
 
-Zoom level 0 = json files for rendering in threejs
-Zoom level 1 = 1:1 (1 block = 1 pixel)
-Zoom level 2 = 4:1 (4 blocks = 1 pixel)
-Zoom level 3 = about 20:1 (20 blocks = 1 pixel) (?)
+- Zoom level 0 = json files for rendering in threejs
+- Zoom level 1 = 1:1 (1 block = 1 pixel)
+- Zoom level 2 = 4:1 (4 blocks = 1 pixel)
+- Zoom level 3 = about 20:1 (20 blocks = 1 pixel) (?)
 
 ## License
 
